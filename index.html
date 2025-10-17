@@ -1,299 +1,564 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Hello World + CSV Viewer</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Hello World + CSV Viewer (with Add & Download)</title>
   <style>
     :root {
-      color-scheme: light dark;
-      --bg: #0b0c10;
-      --panel: #ffffff;
-      --text: #1f2833;
-      --muted: #6b7280;
+      --bg: #0f172a;
+      --panel: #111827;
+      --text: #e5e7eb;
+      --muted: #9ca3af;
       --accent: #2563eb;
-      --border: #e5e7eb;
+      --accent-2: #10b981;
+      --danger: #ef4444;
+      --border: #1f2937;
+      --table-stripe: #0b1220;
+      --focus: #93c5fd;
     }
-    @media (prefers-color-scheme: dark) {
-      :root {
-        --panel: #111827;
-        --text: #e5e7eb;
-        --muted: #9ca3af;
-        --border: #1f2937;
-      }
-    }
+    * { box-sizing: border-box; }
     html, body {
+      height: 100%;
       margin: 0;
-      padding: 0;
-      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
-      background: linear-gradient(145deg, #0f172a 0%, #0b1020 100%);
-      min-height: 100%;
+      background: linear-gradient(180deg, #0b1220, #0f172a 35%, #0b1220 100%);
+      color: var(--text);
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
     }
-    .wrap {
-      max-width: 960px;
+    a { color: inherit; }
+    .container {
+      max-width: 1000px;
       margin: 0 auto;
-      padding: 32px 20px 64px;
+      padding: 24px 16px 56px;
     }
     header {
-      background: linear-gradient(180deg, rgba(255,255,255,0.06) 0, rgba(255,255,255,0.02) 100%);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 24px 20px;
-      color: var(--text);
-      backdrop-filter: blur(8px);
-      box-shadow: 0 10px 30px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.05);
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 16px;
     }
     h1 {
-      margin: 0 0 8px;
+      margin: 0;
       font-size: 28px;
-      letter-spacing: 0.3px;
-      color: #ffffff;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      background: linear-gradient(90deg, #fff, #9fd2ff);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
     }
-    p.sub {
-      margin: 0;
+    .sub {
       color: var(--muted);
+      font-size: 14px;
     }
-    .card {
-      margin-top: 18px;
-      background: var(--panel);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      overflow: hidden;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.25);
-    }
-    .card header {
-      background: transparent;
-      border: 0;
-      box-shadow: none;
-      padding: 16px 18px;
-    }
-    .card header h2 {
-      margin: 0;
-      font-size: 18px;
-      color: var(--text);
-    }
-    .status {
-      padding: 8px 18px 0;
-      font-size: 13px;
-      color: var(--muted);
-    }
-    .content {
-      padding: 16px 18px 22px;
-      overflow-x: auto;
-    }
-    table {
-      border-collapse: collapse;
-      width: 100%;
-      min-width: 420px;
-      background: transparent;
-    }
-    th, td {
-      border: 1px solid var(--border);
-      padding: 10px 12px;
-      text-align: left;
-      color: var(--text);
-    }
-    th {
-      background: rgba(99,102,241,0.08);
-      position: sticky;
-      top: 0;
-      z-index: 1;
-    }
-    .actions {
+    .toolbar {
       display: flex;
+      flex-wrap: wrap;
       gap: 10px;
       align-items: center;
-      padding: 12px 18px 0;
+      margin: 10px 0 18px;
     }
-    button {
+    button, .button {
       appearance: none;
       border: 1px solid var(--border);
-      background: linear-gradient(180deg, rgba(99,102,241,0.22), rgba(99,102,241,0.10));
-      color: #e5e7eb;
-      padding: 8px 12px;
-      border-radius: 8px;
+      background: #0b1220;
+      color: var(--text);
+      padding: 10px 14px;
+      border-radius: 10px;
+      font-size: 14px;
+      line-height: 1;
       cursor: pointer;
-      font-weight: 600;
-      transition: transform 0.05s ease, box-shadow 0.2s ease, background 0.3s ease;
-      box-shadow: 0 4px 14px rgba(99,102,241,0.25);
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: transform 0.02s ease, background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
     }
-    button:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 6px 20px rgba(99,102,241,0.33);
+    button:hover { border-color: #314156; background: #0e1627; }
+    button:active { transform: translateY(1px); }
+    button.primary { background: linear-gradient(180deg, #1e40af, #1d4ed8); border-color: #274ac5; }
+    button.primary:hover { background: linear-gradient(180deg, #223aa2, #1e40af); border-color: #3b82f6; }
+    button.success { background: linear-gradient(180deg, #059669, #10b981); border-color: #10b981; }
+    button.success:hover { background: linear-gradient(180deg, #038a60, #0ea874); }
+    button.danger { background: linear-gradient(180deg, #b91c1c, #ef4444); border-color: #ef4444; }
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
     }
-    a.link {
-      color: #93c5fd;
-      text-decoration: none;
-      border-bottom: 1px dashed rgba(147,197,253,0.5);
+    .status {
+      margin-left: auto;
+      color: var(--muted);
+      font-size: 13px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      border: 1px dashed var(--border);
+      border-radius: 10px;
+      background: rgba(17,24,39,0.4);
+    }
+    .status .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.25);
+    }
+    .status.fallback .dot {
+      background: #f59e0b;
+      box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.25);
+    }
+    .status.dirty .dot {
+      background: #10b981;
+      box-shadow: 0 0 0 2px rgba(16,185,129,0.25);
+    }
+    .panel {
+      background: linear-gradient(180deg, #0a1120, #0c1426);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.04),
+        0 10px 30px rgba(0,0,0,0.35);
+    }
+    .table-wrap {
+      overflow: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 480px;
+      font-size: 14px;
+    }
+    thead th {
+      position: sticky;
+      top: 0;
+      background: #0b1220;
+      color: #c7d2fe;
+      text-align: left;
+      font-weight: 700;
+      padding: 12px;
+      border-bottom: 1px solid var(--border);
+      letter-spacing: 0.02em;
+      z-index: 1;
+    }
+    tbody td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+      color: #e5e7eb;
+    }
+    tbody tr:nth-child(even) td {
+      background: var(--table-stripe);
+    }
+    .empty {
+      padding: 24px;
+      color: var(--muted);
+      text-align: center;
+    }
+    .add-form {
+      margin-top: 16px;
+      padding: 16px;
+      border-top: 1px solid var(--border);
+      background: rgba(17, 24, 39, 0.35);
+      border-radius: 0 0 14px 14px;
+    }
+    .add-form h3 {
+      margin: 0 0 12px 0;
+      font-size: 16px;
+      color: #c7d2fe;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 10px 12px;
+      margin-bottom: 12px;
+    }
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .field label {
+      font-size: 12px;
+      color: var(--muted);
+    }
+    input[type="text"] {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: #0b1220;
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+    }
+    input[type="text"]::placeholder { color: #6b7280; }
+    input[type="text"]:focus {
+      border-color: #334155;
+      box-shadow: 0 0 0 3px rgba(59,130,246,0.25);
+      background: #0f172a;
+    }
+    .form-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: flex-end;
     }
     footer {
-      margin-top: 28px;
+      margin-top: 20px;
+      color: var(--muted);
       font-size: 12px;
-      color: #9ca3af;
       text-align: center;
+    }
+    .pill {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      color: #a5b4fc;
+      background: rgba(99, 102, 241, 0.1);
+      font-size: 12px;
     }
   </style>
 </head>
 <body>
-  <div class="wrap">
+  <div class="container">
     <header>
       <h1>Hello World</h1>
-      <p class="sub">This simple web page also loads and displays sample.csv below.</p>
+      <div class="sub">CSV Viewer + Add Row + Download</div>
     </header>
 
-    <div class="card" aria-live="polite">
-      <header>
-        <h2>CSV Preview: sample.csv</h2>
-      </header>
-
-      <div class="actions">
-        <button id="refreshBtn" type="button" title="Reload CSV from file">Reload CSV</button>
-        <span id="status" class="status">Loading sample.csv…</span>
-      </div>
-
-      <div class="content" id="csv-container" role="region" aria-label="CSV Table">
-        <!-- Table will render here -->
+    <div class="toolbar">
+      <button id="reloadBtn" title="Reload sample.csv from disk (over HTTP)">
+        ⟲ Reload CSV
+      </button>
+      <button id="addRowToggleBtn" class="primary" title="Add a new row to the table">
+        ＋ Add Row
+      </button>
+      <button id="downloadBtn" class="success" title="Download the current table as CSV">
+        ⭳ Download CSV
+      </button>
+      <div id="status" class="status" aria-live="polite" title="Load status">
+        <span class="dot" aria-hidden="true"></span>
+        <span id="statusText">Loading…</span>
       </div>
     </div>
 
+    <section class="panel">
+      <div class="table-wrap" id="tableWrap">
+        <table id="csvTable" aria-live="polite"></table>
+      </div>
+
+      <form id="addRowForm" class="add-form" hidden>
+        <h3>Add a new row <span class="pill" id="colsCountPill"></span></h3>
+        <div class="grid" id="formGrid"></div>
+        <div class="form-actions">
+          <button type="button" id="cancelAddBtn">Cancel</button>
+          <button type="submit" class="success">Append Row</button>
+        </div>
+      </form>
+    </section>
+
     <footer>
-      Tip: Keep a file named sample.csv in the same folder as index.html. If viewing this file directly (file://),
-      some browsers block fetches; this page includes a safe fallback so you still see data.
+      Data loads from sample.csv when served over HTTP. If your browser blocks file:// fetch, an embedded sample is used.
     </footer>
   </div>
 
   <script>
-    // Fallback content mirrors the provided sample.csv attachment.
-    // It will be used only if fetching sample.csv fails (e.g., when opened via file://).
-    window.SAMPLE_CSV_FALLBACK = `id,product,sales
-1,Product A,259.69
-2,Product B,256.16`;
+    // Embedded fallback CSV (used if fetch from disk is blocked or fails)
+    const EMBEDDED_SAMPLE_CSV = `Name,Age,City
+Alice,30,Seattle
+Bob,25,Austin
+Charlie,35,New York`;
 
-    const statusEl = document.getElementById('status');
-    const containerEl = document.getElementById('csv-container');
-    const refreshBtn = document.getElementById('refreshBtn');
+    const state = {
+      headers: [],
+      rows: [],
+      source: 'remote', // 'remote' | 'fallback'
+      dirty: false
+    };
 
-    function setStatus(msg) {
-      statusEl.textContent = msg;
-    }
-
+    // CSV parsing utilities (handles quotes, commas, newlines, double-quotes)
     function parseCSV(text) {
-      // Robust-enough CSV parser for typical cases (handles quotes, embedded commas, CRLF).
-      const rows = [];
+      // Normalize line endings
+      text = String(text ?? '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+
+      const outRows = [];
       let row = [];
-      let cell = '';
-      let i = 0;
+      let field = '';
       let inQuotes = false;
 
-      while (i < text.length) {
+      for (let i = 0; i < text.length; i++) {
         const ch = text[i];
 
         if (inQuotes) {
           if (ch === '"') {
-            // Escaped quote
+            // Lookahead for escaped quote
             if (i + 1 < text.length && text[i + 1] === '"') {
-              cell += '"';
-              i += 2;
-              continue;
+              field += '"';
+              i++;
             } else {
               inQuotes = false;
-              i++;
-              continue;
             }
           } else {
-            cell += ch;
-            i++;
-            continue;
+            field += ch;
           }
         } else {
           if (ch === '"') {
             inQuotes = true;
-            i++;
-            continue;
-          }
-          if (ch === ',') {
-            row.push(cell);
-            cell = '';
-            i++;
-            continue;
-          }
-          if (ch === '\r') {
-            // ignore CR; handle on LF
-            i++;
-            continue;
-          }
-          if (ch === '\n') {
-            row.push(cell);
-            rows.push(row);
+          } else if (ch === ',') {
+            row.push(field);
+            field = '';
+          } else if (ch === '\n') {
+            row.push(field);
+            field = '';
+            outRows.push(row);
             row = [];
-            cell = '';
-            i++;
-            continue;
+          } else {
+            field += ch;
           }
-          cell += ch;
-          i++;
         }
       }
-
-      // push last cell/row
+      // Push last field/row if any
       if (inQuotes) {
-        // Unbalanced quotes; still push best-effort
+        // If CSV ends while in quotes, treat accumulated as a field
+        // and still push; some malformed CSVs do this.
       }
-      if (cell.length || row.length) {
-        row.push(cell);
-        rows.push(row);
+      if (field.length > 0 || row.length > 0) {
+        row.push(field);
+        outRows.push(row);
       }
 
-      // Filter possible trailing empty rows
-      return rows.filter(r => r.length && !(r.length === 1 && r[0] === ''));
+      const headers = outRows[0] ? [...outRows[0]] : [];
+      const body = outRows.slice(1).map(r => {
+        const arr = new Array(headers.length).fill('');
+        for (let i = 0; i < headers.length; i++) arr[i] = r[i] ?? '';
+        return arr;
+      });
+      return { headers, rows: body };
     }
 
-    function renderTable(rows) {
-      if (!rows || !rows.length) {
-        containerEl.innerHTML = '<p style="color:#9ca3af;margin:0">No data found in CSV.</p>';
+    function escapeCSVValue(v) {
+      if (v == null) v = '';
+      const s = String(v);
+      if (/[",\n\r]/.test(s)) {
+        return '"' + s.replace(/"/g, '""') + '"';
+      }
+      return s;
+    }
+
+    function toCSV(headers, rows) {
+      const lines = [];
+      lines.push(headers.map(escapeCSVValue).join(','));
+      for (const row of rows) {
+        const line = headers.map((_, i) => escapeCSVValue(row[i] ?? ''));
+        lines.push(line.join(','));
+      }
+      return lines.join('\n');
+    }
+
+    async function loadCSVFromServer() {
+      // Use no-store to avoid browser caching during reloads
+      const res = await fetch('sample.csv', { cache: 'no-store' });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const text = await res.text();
+      return text;
+    }
+
+    async function loadInitial() {
+      try {
+        const text = await loadCSVFromServer();
+        const { headers, rows } = parseCSV(text);
+        if (!headers.length) throw new Error('Empty CSV');
+        state.headers = headers;
+        state.rows = rows;
+        state.source = 'remote';
+        state.dirty = false;
+      } catch (err) {
+        const { headers, rows } = parseCSV(EMBEDDED_SAMPLE_CSV);
+        state.headers = headers;
+        state.rows = rows;
+        state.source = 'fallback';
+        state.dirty = false;
+      }
+      renderAll();
+    }
+
+    function renderAll() {
+      renderStatus();
+      renderTable();
+      buildAddForm();
+      updateButtons();
+    }
+
+    function renderStatus() {
+      const status = document.getElementById('status');
+      const text = document.getElementById('statusText');
+      status.classList.toggle('fallback', state.source === 'fallback');
+      status.classList.toggle('dirty', state.dirty);
+
+      const srcLabel = state.source === 'remote' ? 'live sample.csv' : 'embedded fallback';
+      const rowsCount = state.rows.length;
+      const colsCount = state.headers.length;
+      const dirtyMark = state.dirty ? ' • edited' : '';
+      text.textContent = `Source: ${srcLabel} • ${rowsCount} rows × ${colsCount} columns${dirtyMark}`;
+    }
+
+    function renderTable() {
+      const table = document.getElementById('csvTable');
+      table.innerHTML = '';
+      if (!state.headers.length) {
+        table.outerHTML = '<div class="empty">No headers found in CSV.</div>';
         return;
       }
 
-      const table = document.createElement('table');
-
-      rows.forEach((r, idx) => {
-        const tr = document.createElement('tr');
-        r.forEach(cell => {
-          const el = document.createElement(idx === 0 ? 'th' : 'td');
-          el.textContent = cell;
-          tr.appendChild(el);
-        });
-        table.appendChild(tr);
+      const thead = document.createElement('thead');
+      const trHead = document.createElement('tr');
+      state.headers.forEach(h => {
+        const th = document.createElement('th');
+        th.textContent = h || '(unnamed)';
+        trHead.appendChild(th);
       });
+      thead.appendChild(trHead);
 
-      containerEl.innerHTML = '';
-      containerEl.appendChild(table);
+      const tbody = document.createElement('tbody');
+      if (!state.rows.length) {
+        const tr = document.createElement('tr');
+        const td = document.createElement('td');
+        td.colSpan = state.headers.length;
+        td.className = 'empty';
+        td.textContent = 'No data rows. Use “Add Row” to append data.';
+        tr.appendChild(td);
+        tbody.appendChild(tr);
+      } else {
+        state.rows.forEach(row => {
+          const tr = document.createElement('tr');
+          for (let i = 0; i < state.headers.length; i++) {
+            const td = document.createElement('td');
+            td.textContent = row[i] ?? '';
+            tr.appendChild(td);
+          }
+          tbody.appendChild(tr);
+        });
+      }
+
+      table.appendChild(thead);
+      table.appendChild(tbody);
     }
 
-    async function loadCSV() {
-      setStatus('Loading sample.csv…');
-      try {
-        const res = await fetch('sample.csv', { cache: 'no-cache' });
-        if (!res.ok) throw new Error('HTTP ' + res.status);
-        const text = await res.text();
-        const rows = parseCSV(text);
-        renderTable(rows);
-        setStatus('Loaded sample.csv');
-      } catch (err) {
-        // Use fallback if available
-        if (typeof window.SAMPLE_CSV_FALLBACK === 'string' && window.SAMPLE_CSV_FALLBACK.trim().length) {
-          const rows = parseCSV(window.SAMPLE_CSV_FALLBACK);
-          renderTable(rows);
-          setStatus('Loaded embedded fallback for sample.csv (fetch failed).');
-        } else {
-          containerEl.innerHTML = '<p style="color:#ef4444;margin:0">Failed to load sample.csv.</p>';
-          setStatus('Error: ' + (err && err.message ? err.message : 'Unable to fetch sample.csv'));
-        }
+    function buildAddForm() {
+      const form = document.getElementById('addRowForm');
+      const grid = document.getElementById('formGrid');
+      const pill = document.getElementById('colsCountPill');
+      grid.innerHTML = '';
+      pill.textContent = `${state.headers.length} columns`;
+
+      state.headers.forEach((header, i) => {
+        const wrap = document.createElement('div');
+        wrap.className = 'field';
+        const label = document.createElement('label');
+        label.setAttribute('for', `col-${i}`);
+        label.textContent = header || `Column ${i + 1}`;
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.id = `col-${i}`;
+        input.name = `col-${i}`;
+        input.placeholder = `Enter ${header || `Column ${i + 1}`}`;
+        wrap.appendChild(label);
+        wrap.appendChild(input);
+        grid.appendChild(wrap);
+      });
+    }
+
+    function showAddForm(show) {
+      const form = document.getElementById('addRowForm');
+      const toggleBtn = document.getElementById('addRowToggleBtn');
+      form.hidden = !show;
+      toggleBtn.textContent = show ? '− Hide Add Row' : '＋ Add Row';
+      toggleBtn.setAttribute('aria-expanded', String(show));
+      if (show) {
+        const first = form.querySelector('input[type="text"]');
+        if (first) first.focus();
       }
     }
 
-    document.addEventListener('DOMContentLoaded', loadCSV);
-    refreshBtn.addEventListener('click', loadCSV);
+    function clearAddForm() {
+      const form = document.getElementById('addRowForm');
+      form.querySelectorAll('input[type="text"]').forEach(i => (i.value = ''));
+    }
+
+    function updateButtons() {
+      document.getElementById('downloadBtn').disabled = state.headers.length === 0;
+      // Reload is always available; if we're in fallback and user is on file:// it will likely do nothing
+    }
+
+    function appendRowFromForm(e) {
+      e.preventDefault();
+      const inputs = Array.from(document.querySelectorAll('#addRowForm input[type="text"]'));
+      if (!inputs.length) return;
+
+      const newRow = inputs.map(i => i.value);
+      // Ensure row length matches headers
+      while (newRow.length < state.headers.length) newRow.push('');
+      if (newRow.length > state.headers.length) newRow.length = state.headers.length;
+
+      state.rows.push(newRow);
+      state.dirty = true;
+      renderAll();
+      clearAddForm();
+      // Keep form open for rapid entry
+    }
+
+    async function reloadCSV() {
+      if (state.dirty) {
+        const ok = confirm('Reloading will discard your in-memory edits. Continue?');
+        if (!ok) return;
+      }
+      try {
+        const text = await loadCSVFromServer();
+        const { headers, rows } = parseCSV(text);
+        if (!headers.length) throw new Error('Empty CSV');
+        state.headers = headers;
+        state.rows = rows;
+        state.source = 'remote';
+        state.dirty = false;
+        renderAll();
+      } catch (err) {
+        alert('Could not reload sample.csv. If you are opening this via file://, run a local server.\nUsing embedded fallback data instead.');
+        const { headers, rows } = parseCSV(EMBEDDED_SAMPLE_CSV);
+        state.headers = headers;
+        state.rows = rows;
+        state.source = 'fallback';
+        state.dirty = false;
+        renderAll();
+      }
+    }
+
+    function downloadCSV() {
+      const csv = toCSV(state.headers, state.rows);
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = state.dirty ? 'sample_edited.csv' : 'sample.csv';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 500);
+    }
+
+    // Wire up events
+    document.getElementById('addRowForm').addEventListener('submit', appendRowFromForm);
+    document.getElementById('cancelAddBtn').addEventListener('click', () => showAddForm(false));
+    document.getElementById('addRowToggleBtn').addEventListener('click', () => {
+      const form = document.getElementById('addRowForm');
+      showAddForm(form.hidden);
+    });
+    document.getElementById('reloadBtn').addEventListener('click', reloadCSV);
+    document.getElementById('downloadBtn').addEventListener('click', downloadCSV);
+
+    // Start
+    loadInitial();
   </script>
 </body>
 </html>
