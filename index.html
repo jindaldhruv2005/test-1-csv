@@ -1,0 +1,299 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Hello World + CSV Viewer</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #0b0c10;
+      --panel: #ffffff;
+      --text: #1f2833;
+      --muted: #6b7280;
+      --accent: #2563eb;
+      --border: #e5e7eb;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --panel: #111827;
+        --text: #e5e7eb;
+        --muted: #9ca3af;
+        --border: #1f2937;
+      }
+    }
+    html, body {
+      margin: 0;
+      padding: 0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      background: linear-gradient(145deg, #0f172a 0%, #0b1020 100%);
+      min-height: 100%;
+    }
+    .wrap {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 32px 20px 64px;
+    }
+    header {
+      background: linear-gradient(180deg, rgba(255,255,255,0.06) 0, rgba(255,255,255,0.02) 100%);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 24px 20px;
+      color: var(--text);
+      backdrop-filter: blur(8px);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.05);
+    }
+    h1 {
+      margin: 0 0 8px;
+      font-size: 28px;
+      letter-spacing: 0.3px;
+      color: #ffffff;
+    }
+    p.sub {
+      margin: 0;
+      color: var(--muted);
+    }
+    .card {
+      margin-top: 18px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+    }
+    .card header {
+      background: transparent;
+      border: 0;
+      box-shadow: none;
+      padding: 16px 18px;
+    }
+    .card header h2 {
+      margin: 0;
+      font-size: 18px;
+      color: var(--text);
+    }
+    .status {
+      padding: 8px 18px 0;
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .content {
+      padding: 16px 18px 22px;
+      overflow-x: auto;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      min-width: 420px;
+      background: transparent;
+    }
+    th, td {
+      border: 1px solid var(--border);
+      padding: 10px 12px;
+      text-align: left;
+      color: var(--text);
+    }
+    th {
+      background: rgba(99,102,241,0.08);
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+    .actions {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      padding: 12px 18px 0;
+    }
+    button {
+      appearance: none;
+      border: 1px solid var(--border);
+      background: linear-gradient(180deg, rgba(99,102,241,0.22), rgba(99,102,241,0.10));
+      color: #e5e7eb;
+      padding: 8px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: transform 0.05s ease, box-shadow 0.2s ease, background 0.3s ease;
+      box-shadow: 0 4px 14px rgba(99,102,241,0.25);
+    }
+    button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(99,102,241,0.33);
+    }
+    a.link {
+      color: #93c5fd;
+      text-decoration: none;
+      border-bottom: 1px dashed rgba(147,197,253,0.5);
+    }
+    footer {
+      margin-top: 28px;
+      font-size: 12px;
+      color: #9ca3af;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>Hello World</h1>
+      <p class="sub">This simple web page also loads and displays sample.csv below.</p>
+    </header>
+
+    <div class="card" aria-live="polite">
+      <header>
+        <h2>CSV Preview: sample.csv</h2>
+      </header>
+
+      <div class="actions">
+        <button id="refreshBtn" type="button" title="Reload CSV from file">Reload CSV</button>
+        <span id="status" class="status">Loading sample.csv…</span>
+      </div>
+
+      <div class="content" id="csv-container" role="region" aria-label="CSV Table">
+        <!-- Table will render here -->
+      </div>
+    </div>
+
+    <footer>
+      Tip: Keep a file named sample.csv in the same folder as index.html. If viewing this file directly (file://),
+      some browsers block fetches; this page includes a safe fallback so you still see data.
+    </footer>
+  </div>
+
+  <script>
+    // Fallback content mirrors the provided sample.csv attachment.
+    // It will be used only if fetching sample.csv fails (e.g., when opened via file://).
+    window.SAMPLE_CSV_FALLBACK = `id,product,sales
+1,Product A,259.69
+2,Product B,256.16`;
+
+    const statusEl = document.getElementById('status');
+    const containerEl = document.getElementById('csv-container');
+    const refreshBtn = document.getElementById('refreshBtn');
+
+    function setStatus(msg) {
+      statusEl.textContent = msg;
+    }
+
+    function parseCSV(text) {
+      // Robust-enough CSV parser for typical cases (handles quotes, embedded commas, CRLF).
+      const rows = [];
+      let row = [];
+      let cell = '';
+      let i = 0;
+      let inQuotes = false;
+
+      while (i < text.length) {
+        const ch = text[i];
+
+        if (inQuotes) {
+          if (ch === '"') {
+            // Escaped quote
+            if (i + 1 < text.length && text[i + 1] === '"') {
+              cell += '"';
+              i += 2;
+              continue;
+            } else {
+              inQuotes = false;
+              i++;
+              continue;
+            }
+          } else {
+            cell += ch;
+            i++;
+            continue;
+          }
+        } else {
+          if (ch === '"') {
+            inQuotes = true;
+            i++;
+            continue;
+          }
+          if (ch === ',') {
+            row.push(cell);
+            cell = '';
+            i++;
+            continue;
+          }
+          if (ch === '\r') {
+            // ignore CR; handle on LF
+            i++;
+            continue;
+          }
+          if (ch === '\n') {
+            row.push(cell);
+            rows.push(row);
+            row = [];
+            cell = '';
+            i++;
+            continue;
+          }
+          cell += ch;
+          i++;
+        }
+      }
+
+      // push last cell/row
+      if (inQuotes) {
+        // Unbalanced quotes; still push best-effort
+      }
+      if (cell.length || row.length) {
+        row.push(cell);
+        rows.push(row);
+      }
+
+      // Filter possible trailing empty rows
+      return rows.filter(r => r.length && !(r.length === 1 && r[0] === ''));
+    }
+
+    function renderTable(rows) {
+      if (!rows || !rows.length) {
+        containerEl.innerHTML = '<p style="color:#9ca3af;margin:0">No data found in CSV.</p>';
+        return;
+      }
+
+      const table = document.createElement('table');
+
+      rows.forEach((r, idx) => {
+        const tr = document.createElement('tr');
+        r.forEach(cell => {
+          const el = document.createElement(idx === 0 ? 'th' : 'td');
+          el.textContent = cell;
+          tr.appendChild(el);
+        });
+        table.appendChild(tr);
+      });
+
+      containerEl.innerHTML = '';
+      containerEl.appendChild(table);
+    }
+
+    async function loadCSV() {
+      setStatus('Loading sample.csv…');
+      try {
+        const res = await fetch('sample.csv', { cache: 'no-cache' });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const text = await res.text();
+        const rows = parseCSV(text);
+        renderTable(rows);
+        setStatus('Loaded sample.csv');
+      } catch (err) {
+        // Use fallback if available
+        if (typeof window.SAMPLE_CSV_FALLBACK === 'string' && window.SAMPLE_CSV_FALLBACK.trim().length) {
+          const rows = parseCSV(window.SAMPLE_CSV_FALLBACK);
+          renderTable(rows);
+          setStatus('Loaded embedded fallback for sample.csv (fetch failed).');
+        } else {
+          containerEl.innerHTML = '<p style="color:#ef4444;margin:0">Failed to load sample.csv.</p>';
+          setStatus('Error: ' + (err && err.message ? err.message : 'Unable to fetch sample.csv'));
+        }
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', loadCSV);
+    refreshBtn.addEventListener('click', loadCSV);
+  </script>
+</body>
+</html>
